@@ -117,8 +117,9 @@ class GitHubWatchdog:
             try:
                 if "Missing required file: README.md" in issue:
                     # Recreate README if missing
+                    repo_name = os.path.basename(os.getcwd())
                     with open('README.md', 'w') as f:
-                        f.write("# Deployment-script-fix2\n")
+                        f.write(f"# {repo_name}\n")
                         f.write("Auto-healed by GitHub Watchdog\n")
                     logger.info("Healed: Recreated README.md")
                     healed_count += 1

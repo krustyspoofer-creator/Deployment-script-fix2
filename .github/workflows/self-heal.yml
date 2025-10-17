@@ -69,7 +69,12 @@ jobs:
         if: steps.verify.outputs.issues_found == 'true'
         run: |
           echo "🔥 Resurrecting missing components..."
-          python resurrect_watchdog.py || true
+          if python resurrect_watchdog.py; then
+            echo "✅ Resurrection successful"
+          else
+            echo "⚠️  Resurrection failed, manual intervention may be required"
+            exit 0  # Don't fail the workflow
+          fi
           
           # Create workflows directory if missing
           mkdir -p .github/workflows

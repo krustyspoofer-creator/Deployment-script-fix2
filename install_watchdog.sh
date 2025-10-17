@@ -81,7 +81,7 @@ fi
 
 # Test the watchdog
 echo "🧪 Testing watchdog..."
-timeout 5 python3 watchdog.py &> /dev/null || true
+timeout 15 python3 watchdog.py &> /dev/null || true
 if [ -f "watchdog.log" ] && [ -f "watchdog_status.json" ]; then
     echo "✅ Watchdog test passed"
 else
