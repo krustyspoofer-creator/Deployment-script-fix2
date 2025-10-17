@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 """
+Watchdog Resurrection Script - The Phoenix Module
+This script can recreate the entire watchdog system if it gets deleted.
+This is the ultimate failsafe mechanism.
+"""
+
+import os
+import sys
+
+WATCHDOG_CODE = '''#!/usr/bin/env python3
+"""
 GitHub Account Watchdog - An unkillable auto-healing system
 Monitors and maintains GitHub account health automatically
 """
@@ -118,8 +128,8 @@ class GitHubWatchdog:
                 if "Missing required file: README.md" in issue:
                     # Recreate README if missing
                     with open('README.md', 'w') as f:
-                        f.write("# Deployment-script-fix2\n")
-                        f.write("Auto-healed by GitHub Watchdog\n")
+                        f.write("# Deployment-script-fix2\\n")
+                        f.write("Auto-healed by GitHub Watchdog\\n")
                     logger.info("Healed: Recreated README.md")
                     healed_count += 1
                 
@@ -214,3 +224,41 @@ def main():
 
 if __name__ == '__main__':
     main()
+'''
+
+def resurrect():
+    """Resurrect the watchdog if it's missing"""
+    print("🔥 PHOENIX MODE: Resurrecting GitHub Watchdog...")
+    
+    # Check if watchdog exists
+    if os.path.exists('watchdog.py'):
+        print("✅ Watchdog script already exists")
+    else:
+        print("📝 Creating watchdog.py...")
+        with open('watchdog.py', 'w') as f:
+            f.write(WATCHDOG_CODE)
+        os.chmod('watchdog.py', 0o755)
+        print("✅ Watchdog script resurrected!")
+    
+    # Create config if missing
+    if not os.path.exists('watchdog_config.json'):
+        print("📝 Creating watchdog_config.json...")
+        config = {
+            "check_interval": 300,
+            "max_restart_attempts": -1,
+            "enable_auto_heal": True,
+            "monitor_workflows": True,
+            "monitor_repositories": True,
+            "monitor_issues": True,
+            "github_token": "",
+            "repository": ""
+        }
+        with open('watchdog_config.json', 'w') as f:
+            json.dump(config, f, indent=2)
+        print("✅ Config file created!")
+    
+    print("\n🎉 Resurrection complete! The watchdog lives again!")
+    print("Run: python watchdog.py")
+
+if __name__ == '__main__':
+    resurrect()
