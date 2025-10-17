@@ -1,0 +1,60 @@
+name: Watchdog Auto-Healing
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  watchdog:
+    name: Monitor and Auto-Heal
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Make scripts executable
+        run: |
+          chmod +x health-check.sh watchdog.py
+
+      - name: Run health check
+        id: health_check
+        continue-on-error: true
+        run: |
+          ./health-check.sh
+
+      - name: Attempt recovery if health check failed
+        if: steps.health_check.outcome == 'failure'
+        run: |
+          echo "Health check failed, attempting recovery..."
+          chmod +x deploy.sh
+          ./deploy.sh
+
+      - name: Verify recovery
+        if: steps.health_check.outcome == 'failure'
+        run: |
+          echo "Verifying recovery..."
+          ./health-check.sh
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: watchdog-logs-${{ github.run_number }}
+          path: logs/
+          retention-days: 7
+
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ steps.health_check.outcome }}" == "success" ]; then
+            echo "✅ System is healthy"
+          else
+            echo "⚠️ System required recovery"
+          fi
