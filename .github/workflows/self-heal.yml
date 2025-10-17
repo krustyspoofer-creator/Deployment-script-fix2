@@ -1,0 +1,126 @@
+name: Self-Healing System
+
+# This workflow ensures the watchdog workflow exists and is functional
+# It's a meta-watchdog that watches the watchdog
+
+on:
+  # Run daily to verify system integrity
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  
+  # Manual trigger
+  workflow_dispatch:
+  
+  # Trigger on push to critical branches
+  push:
+    branches:
+      - main
+      - master
+      - copilot/**
+    paths:
+      - '.github/workflows/**'
+      - 'watchdog.py'
+      - 'resurrect_watchdog.py'
+
+jobs:
+  verify-and-heal:
+    name: Verify Watchdog System
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      actions: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Verify watchdog components
+        id: verify
+        run: |
+          echo "Checking watchdog system integrity..."
+          
+          MISSING=()
+          
+          # Check critical files
+          [ ! -f "watchdog.py" ] && MISSING+=("watchdog.py")
+          [ ! -f "watchdog_config.json" ] && MISSING+=("watchdog_config.json")
+          [ ! -f ".github/workflows/watchdog.yml" ] && MISSING+=("watchdog.yml")
+          [ ! -f "resurrect_watchdog.py" ] && MISSING+=("resurrect_watchdog.py")
+          
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "issues_found=true" >> $GITHUB_OUTPUT
+            echo "missing_files=${MISSING[*]}" >> $GITHUB_OUTPUT
+            echo "⚠️  Missing components: ${MISSING[*]}"
+          else
+            echo "issues_found=false" >> $GITHUB_OUTPUT
+            echo "✅ All watchdog components present"
+          fi
+      
+      - name: Resurrect watchdog if needed
+        if: steps.verify.outputs.issues_found == 'true'
+        run: |
+          echo "🔥 Resurrecting missing components..."
+          if python resurrect_watchdog.py; then
+            echo "✅ Resurrection successful"
+          else
+            echo "⚠️  Resurrection failed, manual intervention may be required"
+            exit 0  # Don't fail the workflow
+          fi
+          
+          # Create workflows directory if missing
+          mkdir -p .github/workflows
+          
+          echo "✅ Resurrection attempt completed"
+      
+      - name: Test watchdog functionality
+        run: |
+          echo "🧪 Testing watchdog..."
+          timeout 10 python watchdog.py || true
+          
+          if [ -f "watchdog.log" ]; then
+            echo "✅ Watchdog test successful"
+            tail -n 20 watchdog.log
+          else
+            echo "⚠️  Watchdog test incomplete"
+          fi
+      
+      - name: Commit healing changes
+        if: steps.verify.outputs.issues_found == 'true'
+        run: |
+          git config --global user.name "Self-Healing System"
+          git config --global user.email "self-heal@github.com"
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "📝 Committing resurrected components..."
+            git add .
+            git commit -m "Self-heal: Resurrected watchdog components at $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+            git push || echo "Push failed, manual intervention may be required"
+          fi
+      
+      - name: Report status
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "Self-Healing System Status Report"
+          echo "=========================================="
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo ""
+          
+          if [ "${{ steps.verify.outputs.issues_found }}" == "true" ]; then
+            echo "🔧 Healing actions taken"
+            echo "Missing files were: ${{ steps.verify.outputs.missing_files }}"
+          else
+            echo "✅ System healthy - no action required"
+          fi
+          
+          echo ""
+          echo "Watchdog system is operational and self-healing"

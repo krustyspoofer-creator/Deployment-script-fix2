@@ -1,0 +1,10 @@
+{
+  "check_interval": 300,
+  "max_restart_attempts": -1,
+  "enable_auto_heal": true,
+  "monitor_workflows": true,
+  "monitor_repositories": true,
+  "monitor_issues": true,
+  "github_token": "",
+  "repository": ""
+}

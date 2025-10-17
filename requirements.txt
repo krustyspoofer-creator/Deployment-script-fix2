@@ -1,0 +1,10 @@
+# GitHub Account Watchdog Dependencies
+# Minimal dependencies for maximum reliability
+
+# No external dependencies required for basic watchdog functionality
+# The watchdog uses only Python standard library for maximum portability
+# and to avoid dependency conflicts that could break the unkillable nature
+
+# Optional: Uncomment if you need GitHub API access beyond git commands
+# PyGithub==2.1.1
+# requests==2.31.0
